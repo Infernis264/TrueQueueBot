@@ -105,3 +105,6 @@ dist
 
 # Authentication files
 auth/
+
+# Build files
+build/
