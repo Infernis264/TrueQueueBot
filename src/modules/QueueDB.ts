@@ -93,6 +93,8 @@ export default class QueueDB {
 		return await q.save();
 	}
 
+	// Channel point manager functions
+
 	public async makeChannelRewards(channels: string[]) {
 		for (let channel of channels) {
 			let exists = (await Reward.countDocuments({channel: channel}).exec()) === 1;

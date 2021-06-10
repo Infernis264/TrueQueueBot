@@ -5,28 +5,41 @@ import Permissions from "./Permissions";
 
 export default class CommandHandler {
 
-	public static ENABLED = ["queue", "next", "remove", "delredeem", "setredeem", "none"];
+	public static ENABLED = ["queue", "next", "remove", "delredeem", "setredeem", "none", "startq", "stopq", "q"];
+	public static NON_QUEUE_COMMANDS = ["delredeem", "setredeem", "startq", "stopq"];
 
-	private channels: string[];
+	private enabled: {[key:string]:boolean};
 	private db: QueueDB;
 	private rewards: RewardManager;
 
 	constructor(channels: string[]) {
 
-		this.channels = channels;
+		this.enabled = {};
 		this.db = new QueueDB("mongodb://localhost:27017/truequeue", channels);
 		this.rewards = new RewardManager(channels, this.db);
+		channels.forEach(channel=>{
+			this.enabled[channel] = false;
+		});
 
 	}
 
-	async handle(command: string, user: TMI.ChatUserstate, channel: string, param: string): Promise<string> {
-		if (user["custom-reward-id"] && !command.includes("redeem")) {
+	async handle(command: string, user: TMI.ChatUserstate, channel: string, param: string): Promise<string> {	
+		if (!this.enabled[channel] && !CommandHandler.NON_QUEUE_COMMANDS.includes(command)) {
+			if (Permissions.isMod(user) && !user["custom-reward-id"]) {
+				return "Start the queue with !startq to use queue commands!";
+			}
+			if (user["custom-reward-id"]) {
+				return "Sorry, but you can only join the queue when it is open (have a mod refund your points)";
+			}
+			return "";
+		}
+		if (user["custom-reward-id"] && !(command.includes("redeem") && Permissions.isBroadcaster(user))) {
 			return this.rewards.handle(channel, user);
 		}
 		switch (command) {
 			// logs the queue to the chat
+			case "q":
 			case "queue":
-				console.log("loggging ququq");
 				let q = await this.db.getQueue(channel);
 				return q.length > 0 ? 
 					`Queue (${q.length}): Next -> ${q.map(o=>o.display).join(", ")}` : 
@@ -40,6 +53,7 @@ export default class CommandHandler {
 						`There is no one in the queue`;
 				}
 			break;
+			// removes a user from the queue
 			case "remove":
 				if (Permissions.isMod(user)) {
 					let success = await this.db.removeUserFromQueue(channel, param);
@@ -48,11 +62,23 @@ export default class CommandHandler {
 						`User ${param} is not in queue or their name is misspelled!`
 				}
 			break;
+			// starts or stops the queue
+			case "startq":
+			case "stopq":
+				if (Permissions.isMod(user)) {
+					this.enabled[channel] = command.includes("start");
+					return this.enabled[channel] ? 
+						"Opened up the queue" :
+						"Stopped the queue (people that are in queue will stay in queue for next time)";
+				}
+			break;
+			// prevents a redeem from being able to be used to queue users
 			case "delredeem":
 				if (Permissions.isBroadcaster(user)) {
 					return await this.rewards.changeRedeem(channel, user, true)
 				}
 			break;
+			// sets the redeem that users will use to queue
 			case "setredeem":
 				if (Permissions.isBroadcaster(user)) {
 					if (!user["custom-reward-id"]) return "You have to use this command inside a channel point redeem message!";

@@ -2,8 +2,8 @@ import * as TMI from "tmi.js";
 import Auth from "./auth/Auth";
 import CommandHandler from "./modules/CommandHandler";
 
-// put the channels your bot is enabled on in this array
-const CHANNELS = [""]; // The channels the bot is active in
+// The channels the bot is active in
+const CHANNELS = Auth.CHANNELS;
 
 // the prefix that differentiates commands
 const PREFIX = "!";
@@ -29,7 +29,7 @@ client.on("message", async (channel: string, user: TMI.ChatUserstate, message: s
 	} else if(user["custom-reward-id"]) {
 		msg = await commands.handle("none", user, channel.replace(/\W/g, ""), message.split(" ")[1]);
 	}
-	if (msg.length > 0) {
+	if (msg) {
 		client.say(channel, msg.toString());
 	}
 });
