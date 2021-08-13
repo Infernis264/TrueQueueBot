@@ -5,8 +5,8 @@ import Permissions from "./Permissions";
 
 export default class CommandHandler {
 
-	public static ENABLED = ["queue", "next", "remove", "delredeem", "setredeem", "none", "startq", "stopq", "q"];
-	public static NON_QUEUE_COMMANDS = ["delredeem", "setredeem", "startq", "stopq"];
+	public static ENABLED = ["queue", "next", "remove", "delredeem", "setredeem", "q"];
+	public static NON_QUEUE_COMMANDS = ["delredeem", "setredeem"];
 
 	private enabled: {[key:string]:boolean};
 	private db: QueueDB;
@@ -24,15 +24,6 @@ export default class CommandHandler {
 	}
 
 	async handle(command: string, user: TMI.ChatUserstate, channel: string, param: string): Promise<string> {	
-		if (!this.enabled[channel] && !CommandHandler.NON_QUEUE_COMMANDS.includes(command)) {
-			if (Permissions.isMod(user) && !user["custom-reward-id"]) {
-				return "Start the queue with !startq to use queue commands!";
-			}
-			if (user["custom-reward-id"]) {
-				return "Sorry, but you can only join the queue when it is open (have a mod refund your points)";
-			}
-			return "";
-		}
 		if (user["custom-reward-id"] && !(command.includes("redeem") && Permissions.isBroadcaster(user))) {
 			return this.rewards.handle(channel, user);
 		}
@@ -62,7 +53,7 @@ export default class CommandHandler {
 						`User ${param} is not in queue or their name is misspelled!`
 				}
 			break;
-			// starts or stops the queue
+			/*// starts or stops the queue
 			case "startq":
 			case "stopq":
 				if (Permissions.isMod(user)) {
@@ -71,8 +62,8 @@ export default class CommandHandler {
 						"Opened up the queue" :
 						"Stopped the queue (people that are in queue will stay in queue for next time)";
 				}
-			break;
-			// prevents a redeem from being able to be used to queue users
+			break;*/
+			// prevents the set redeem from being able to be used to queue users anymore
 			case "delredeem":
 				if (Permissions.isBroadcaster(user)) {
 					return await this.rewards.changeRedeem(channel, user, true)
