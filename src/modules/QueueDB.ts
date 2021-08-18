@@ -94,6 +94,22 @@ export default class QueueDB {
 		}
 		return null;
 	}
+	public async skipUser(channel: string, user: string): Promise<UserType> {
+		let q = await Queue.findOne({channel: channel}).exec() as QueueType;
+		if (q.queue.length <= 1) return null;
+		let index = q.queue.findIndex(u=>u.display.toLowerCase() === user.toLowerCase());
+		let skipped: UserType = null;
+		if (index >= 0) {
+			skipped = q.queue.splice(index, 1)[0];
+		} else if (!user) {
+			skipped = q.queue.shift();
+		}
+		if (skipped) {
+			q.queue.push(skipped);
+			await q.save();
+		}
+		return skipped; 
+	}
 
 	public async addUserToQueue(channel: string, userid: string, display: string): Promise<QueueType> {
 		let q = await Queue.findOne({channel: channel}).exec() as QueueType;

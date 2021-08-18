@@ -73,7 +73,12 @@ export default class CommandHandler {
 				}
 			break;
 			case "skip":
-				
+				if (Permissions.isMod(user)) {
+					let success = await this.db.skipUser(channel, param);
+					return success ?
+						`Successfully skipped ${success.display} and moved them to the back of the line.` :
+						`Couldn't skip ${param}. Are they in the queue?`
+				}
 			break;
 			// prevents the set redeem from being able to be used to queue users anymore
 			case "delredeem":
