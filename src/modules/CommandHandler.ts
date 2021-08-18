@@ -5,7 +5,7 @@ import Permissions from "./Permissions";
 
 export default class CommandHandler {
 
-	public static ENABLED = ["queue", "next", "remove", "delredeem", "setredeem", "q"];
+	public static ENABLED = ["queue", "next", "remove", "delredeem", "setredeem", "q", "drawn", "requeue", "req", ];
 	public static NON_QUEUE_COMMANDS = ["delredeem", "setredeem"];
 
 	private enabled: {[key:string]:boolean};
@@ -54,10 +54,13 @@ export default class CommandHandler {
 				}
 			break;
 			case "drawn":
-				let drawn = await this.db.getDrawn(channel);
-				return drawn.length > 0 ?
-					`Recently Drawn: ${drawn.map(o => o.display).join(", ")}` :
-					`No one has recently been drawn`;
+				if (Permissions.isMod(user)) {
+					let drawn = await this.db.getDrawn(channel);
+					return drawn.length > 0 ?
+						`Recently Drawn: ${drawn.map(o => o.display).join(", ")}` :
+						`No one has recently been drawn`;
+				}
+			case "req":
 			case "requeue":
 				if (Permissions.isMod(user)) {
 					if (!param) {
@@ -70,7 +73,7 @@ export default class CommandHandler {
 				}
 			break;
 			case "skip":
-
+				
 			break;
 			// prevents the set redeem from being able to be used to queue users anymore
 			case "delredeem":

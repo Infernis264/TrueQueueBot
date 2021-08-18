@@ -88,6 +88,7 @@ export default class QueueDB {
 		if (q) {
 			if (q.queue.length === 0) return null;
 			let user = q.queue.shift();
+			q.drawn.push(user);
 			await q.save();
 			return user;
 		}
@@ -118,7 +119,10 @@ export default class QueueDB {
 				requeuedUser = q.drawn.splice(index, 1)[0];
 			}
 		}
-		q.save();
+		if (requeuedUser) {
+			q.queue.push(requeuedUser);
+			await q.save();
+		}
 		return requeuedUser;
 	}
 	// Channel point manager functions
