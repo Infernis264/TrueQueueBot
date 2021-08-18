@@ -53,16 +53,25 @@ export default class CommandHandler {
 						`User ${param} is not in queue or their name is misspelled!`
 				}
 			break;
-			/*// starts or stops the queue
-			case "startq":
-			case "stopq":
+			case "drawn":
+				let drawn = await this.db.getDrawn(channel);
+				return drawn.length > 0 ?
+					`Recently Drawn: ${drawn.map(o => o.display).join(", ")}` :
+					`No one has recently been drawn`;
+			case "requeue":
 				if (Permissions.isMod(user)) {
-					this.enabled[channel] = command.includes("start");
-					return this.enabled[channel] ? 
-						"Opened up the queue" :
-						"Stopped the queue (people that are in queue will stay in queue for next time)";
+					if (!param) {
+						return "Please specify a username in the !drawn list to place at the end of the queue";
+					}
+					let success = await this.db.reQueue(channel, param);
+					return success ? 
+						`Successfully put ${success.display} back in line!` :
+						`Couldn't put ${param} back in line. Check your spelling and/or make sure they are in the drawn list.`
 				}
-			break;*/
+			break;
+			case "skip":
+
+			break;
 			// prevents the set redeem from being able to be used to queue users anymore
 			case "delredeem":
 				if (Permissions.isBroadcaster(user)) {

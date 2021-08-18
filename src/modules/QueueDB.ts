@@ -1,6 +1,8 @@
 import { Document, Schema, LeanDocument } from "mongoose";
 import * as mongoose from "mongoose";
 
+const DRAWN_HISTORY_SIZE = 13;
+
 const User = new Schema({
 	twitchid: String,
 	display: String
@@ -8,6 +10,7 @@ const User = new Schema({
 
 const Queue = mongoose.model("Queue", new Schema({
 	queue: [User],
+	drawn: [User],
 	channel: String
 }));
 const Reward = mongoose.model("Reward", new Schema({
@@ -18,6 +21,7 @@ const Reward = mongoose.model("Reward", new Schema({
 interface QueueType extends Document{
 	channel: string;
 	queue: UserType[];
+	drawn: UserType[];
 }
 interface UserType {
 	twitchid: string;
@@ -50,6 +54,7 @@ export default class QueueDB {
 			if (!exists) {
 				let q = new Queue({
 					queue: [],
+					drawn: [],
 					channel: channel
 				});
 				await q.save();
@@ -73,6 +78,11 @@ export default class QueueDB {
 		return q.queue;
 	}
 
+	public async getDrawn(channel: string): Promise<UserType[]> {
+		let d = (await Queue.findOne({channel: channel}).exec()) as QueueType;
+		return d.drawn;
+	}
+
 	public async getNextInQueue(channel: string): Promise<UserType> {
 		let q = await Queue.findOne({channel: channel}).exec() as QueueType;
 		if (q) {
@@ -93,6 +103,24 @@ export default class QueueDB {
 		return await q.save();
 	}
 
+	public async reQueue(channel: string, user: string): Promise<UserType> {
+		let q = (await Queue.findOne({channel: channel}).exec()) as QueueType;
+		let userInt = parseInt(user);
+		let requeuedUser: UserType = null;
+
+		if (userInt <= DRAWN_HISTORY_SIZE && user.length < 2) {
+			if (userInt < q.drawn.length) {
+				requeuedUser = q.drawn.splice(userInt - 1, 1)[0];
+			}
+		} else {
+			let index = q.drawn.findIndex(u=>u.display.toLowerCase() === user.toLowerCase());
+			if (index >= 0) {
+				requeuedUser = q.drawn.splice(index, 1)[0];
+			}
+		}
+		q.save();
+		return requeuedUser;
+	}
 	// Channel point manager functions
 
 	public async makeChannelRewards(channels: string[]) {
