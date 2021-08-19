@@ -1,7 +1,7 @@
 import { Document, Schema, LeanDocument } from "mongoose";
 import * as mongoose from "mongoose";
 
-const DRAWN_HISTORY_SIZE = 13;
+const DRAWN_HISTORY_SIZE = 10;
 
 const User = new Schema({
 	twitchid: String,
@@ -88,7 +88,10 @@ export default class QueueDB {
 		if (q) {
 			if (q.queue.length === 0) return null;
 			let user = q.queue.shift();
-			q.drawn.push(user);
+			// remove the oldest person from the drawn array
+			if (q.drawn.length > DRAWN_HISTORY_SIZE) q.drawn.pop();
+			q.drawn.unshift(user);
+			
 			await q.save();
 			return user;
 		}
@@ -97,10 +100,12 @@ export default class QueueDB {
 	public async skipUser(channel: string, user: string): Promise<UserType> {
 		let q = await Queue.findOne({channel: channel}).exec() as QueueType;
 		if (q.queue.length <= 1) return null;
-		let index = q.queue.findIndex(u=>u.display.toLowerCase() === user.toLowerCase());
 		let skipped: UserType = null;
-		if (index >= 0) {
-			skipped = q.queue.splice(index, 1)[0];
+		if (user) {
+			let index = q.queue.findIndex(u => u.display.toLowerCase() === user.toLowerCase());
+			if (index >= 0) {
+				skipped = q.queue.splice(index, 1)[0];
+			}
 		} else if (!user) {
 			skipped = q.queue.shift();
 		}

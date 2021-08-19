@@ -5,7 +5,7 @@ import Permissions from "./Permissions";
 
 export default class CommandHandler {
 
-	public static ENABLED = ["queue", "next", "remove", "delredeem", "setredeem", "q", "drawn", "requeue", "req", ];
+	public static ENABLED = ["queue", "next", "remove", "delredeem", "setredeem", "q", "drawn", "requeue", "req",  "skip"];
 	public static NON_QUEUE_COMMANDS = ["delredeem", "setredeem"];
 
 	private enabled: {[key:string]:boolean};
